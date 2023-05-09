@@ -91,6 +91,10 @@ URL below. Then follow the directions in that wizard.
 
 ### Multiple AWS environments
 
+**NOTE**: Multiple AWS environments works correctly without extra configuration
+for Admin users. See ["Non-Admin Users"](#non-admin-users) for extra
+configuration needed for non-admin users.
+
 To support multiple AWS environments, associate additional AWS Federation
 applications with the OIDC app The OIDC app **must** have the `okta.apps.read`
 grant. The following is an illustration of the association of objects that make
@@ -114,6 +118,30 @@ up this kind of configuration.
 #### Example creds consumed for S3 operations
 
 ![conclusion](./doc/example-conclusion.png)
+
+### Non-Admin Users
+
+Multiple AWS environments requires extra configuration for non-admin users.
+Follow these steps to support non-admin users.
+
+1) Create a custom admin role with the only permission being "View application
+and their details", and a resource set constrained to "All AWS Account
+Federation apps".
+
+2) Create a group that will contain the AWS custom admin role users.
+
+3) Add a rule on the admin console authentication policy that denies access if
+the use is a member of the group from step 2.
+
+4) Assign non-admin users this custom role in step 1 and assign them to the
+group in step 2.
+
+The "Admin" button will be visible on the Okta dashboard of non-admin users but
+they will receive a 403 if they attempt to open the Admin UI.
+
+It is on our feature backlog to get support into the Okta API to allow the
+multiple AWS Fed apps feature into okta-aws-cli without needing this work
+around using a custom admin role.
 
 ## Recommendations
 
@@ -155,7 +183,7 @@ $ make build
 
 ## Configuration
 
-**Note**: If your AWS IAM IdP is in a non-commercial region, such as GovCloud,
+**NOTE**: If your AWS IAM IdP is in a non-commercial region, such as GovCloud,
 the environmental variable
 [`AWS_REGION`](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html)
 should be set
@@ -189,25 +217,27 @@ Also see the CLI's online help `$ okta-aws-cli --help`
 | Okta Org Domain (**required**) | `OKTA_ORG_DOMAIN` | `--org-domain [value]` | Full domain hostname of the Okta org e.g. `test.okta.com` |
 | OIDC Client ID (**required**) | `OKTA_OIDC_CLIENT_ID` | `--oidc-client-id [value]` | See [Allowed Web SSO Client](#allowed-web-sso-client) |
 | Okta AWS Account Federation integration app ID (optional) | `OKTA_AWS_ACCOUNT_FEDERATION_APP_ID` | `--aws-acct-fed-app-id [value]` | See [AWS Account Federation integration app](#aws-account-federation-integration-app). This value is only required if the OIDC app doesn't have the `okta.apps.read` grant for whatever reason |
-| Preselect the AWS IAM Identity Provider ARN (optional) | `AWS_IAM_IDP` | `--aws-iam-idp [value]` | Preselects the IdP list to this preferred IAM Identity Provider. If there are other IdPs available they will not be listed. |
-| Preselects the AWS IAM Role ARN to assume (optional) | `AWS_IAM_ROLE` | `--aws-iam-role [value]` | Preselects the role list to this preferred IAM role for the given IAM Identity Provider. If there are other Roles available they will not be listed. |
-| AWS Session Duration (optional) | `AWS_SESSION_DURATION` | `--session-duration [value]` | The lifetime, in seconds, of the AWS credentials. Must be between 60 and 43200. |
-| Output format (optional) | `FORMAT` | `--format [value]` | Default is `env-var`. Options: `env-var` for output to environment variables, `aws-credentials` for output to AWS credentials file |
-| Profile (optional) | `PROFILE` | `--profile [value]` | Default is `default`  |
-| Display QR Code (optional) | `QR_CODE=true` | `--qr-code` | `true` if flag is present  |
-| Automatically open the activation URL with the system web browser (optional) | `OPEN_BROWSER=true` | `--open-browser` | `true` if flag is present  |
-| Alternate AWS credentials file path (optional) | `AWS_CREDENTIALS` | `--aws-credentials` | Path to alternative credentials file other than AWS CLI default |
-| (Over)write the given profile to the AWS credentials file (optional). WARNING: When enabled, overwriting can inadvertently remove dangling comments and extraneous formatting from the creds file. | `WRITE_AWS_CREDENTIALS=true` | `--write-aws-credentials` | `true` if flag is present  |
-| Emit deprecated AWS variable `aws_security_token` with duplicated value from `aws_session_token` | `LEGACY_AWS_VARIABLES=true` | `--legacy-aws-variables` | `true` if flag is present  |
-| Verbosely print all API calls/responses to the screen | `DEBUG_API_CALLS=true` | `--debug-api-calls` | `true` if flag is present  |
+| Preselect the AWS IAM Identity Provider ARN (optional) | `OKTA_AWSCLI_IAM_IDP` | `--aws-iam-idp [value]` | Preselects the IdP list to this preferred IAM Identity Provider. If there are other IdPs available they will not be listed. |
+| Preselects the AWS IAM Role ARN to assume (optional) | `OKTA_AWSCLI_IAM_ROLE` | `--aws-iam-role [value]` | Preselects the role list to this preferred IAM role for the given IAM Identity Provider. If there are other Roles available they will not be listed. |
+| AWS Session Duration (optional) | `OKTA_AWSCLI_SESSION_DURATION` | `--session-duration [value]` | The lifetime, in seconds, of the AWS credentials. Must be between 60 and 43200. |
+| Output format (optional) | `OKTA_AWSCLI_FORMAT` | `--format [value]` | Default is `env-var`. Options: `env-var` for output to environment variables, `aws-credentials` for output to AWS credentials file |
+| Profile (optional) | `OKTA_AWSCLI_PROFILE` | `--profile [value]` | Default is `default`  |
+| Display QR Code (optional) | `OKTA_AWSCLI_QR_CODE=true` | `--qr-code` | `true` if flag is present  |
+| Automatically open the activation URL with the system web browser (optional) | `OKTA_AWSCLI_OPEN_BROWSER=true` | `--open-browser` | `true` if flag is present  |
+| Cache Okta access token at `$HOME/.okta/awscli-access-token.json` to reduce need to open device authorization URL | `OKTA_AWSCLI_CACHE_ACCESS_TOKEN=true` | `--cache-access-token` | `true` if flag is present  |
+| Alternate AWS credentials file path (optional) | `OKTA_AWSCLI_AWS_CREDENTIALS` | `--aws-credentials` | Path to alternative credentials file other than AWS CLI default |
+| (Over)write the given profile to the AWS credentials file (optional). WARNING: When enabled, overwriting can inadvertently remove dangling comments and extraneous formatting from the creds file. | `OKTA_AWSCLI_WRITE_AWS_CREDENTIALS=true` | `--write-aws-credentials` | `true` if flag is present  |
+| Emit deprecated AWS variable `aws_security_token` with duplicated value from `aws_session_token` | `OKTA_AWSCLI_LEGACY_AWS_VARIABLES=true` | `--legacy-aws-variables` | `true` if flag is present  |
+| Emit expiry timestamp `x_security_token_expires` in RFC3339 format for the session/security token (AWS credentials file only) | `OKTA_AWSCLI_EXPIRY_AWS_VARIABLES=true` | `--expiry-aws-variables` | `true` if flag is present  |
+| Verbosely print all API calls/responses to the screen | `OKTA_AWSCLI_DEBUG_API_CALLS=true` | `--debug-api-calls` | `true` if flag is present  |
 | HTTP/HTTPS Proxy support | `HTTP_PROXY` or `HTTPS_PROXY` | n/a | HTTP/HTTPS URL of proxy service (based on golang [net/http/httpproxy](https://pkg.go.dev/golang.org/x/net/http/httpproxy) package) |
 
-NOTE: If
+**NOTE**: If
 [`AWS_REGION`](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html)
 is set in the `.env` file it will be promoted into the okta-aws-cli runtime if
 it isn't also already set as an ENV VAR. This will allow operators making use of
-an `.env` file have to have proper AWS API behavior in spefific regions, for
-instance in US govcloud and other non-North America regions.
+an `.env` file to have proper AWS API behavior in spefific regions, for instance
+in US govcloud and other non-North America regions.
 
 ### Allowed Web SSO Client
 
@@ -260,6 +290,49 @@ $ okta-aws-cli --org-domain test.okta.com \
 $ okta-aws-cli --org-domain test.okta.com \
     --oidc-client-id 0oa5wyqjk6Wm148fE1d7 \
     --aws-acct-fed-app-id 0oa9x1rifa2H6Q5d8325
+```
+
+### Friendly IdP menu labels
+
+When the operator has many AWS Federation apps listing the AWS IAM IdP ARNs can
+make it hard to read the list. The operator can create an Okta config file in
+YAML format at `$HOME/.okta/okta.yaml` that allows them to set a map of alias
+labels for the ARN values.
+
+**NOTE**: The Okta language SDKs have standardized on using
+`$HOME/.okta/okta.yaml` as a configuration file and location. We will continue
+that practice with read-only friendly okta-aws-cli application values.
+
+#### Before
+
+```
+? Choose an IdP:  [Use arrows to move, type to filter]
+> Fed App 1 Label (arn:aws:iam::123456789012:saml-provider/company-okta-idp)
+  Fed App 2 Label (arn:aws:iam::012345678901:saml-provider/company-okta-idp)
+  Fed App 3 Label (arn:aws:iam::901234567890:saml-provider/company-okta-idp)
+  Fed App 4 Label (arn:aws:iam::890123456789:saml-provider/company-okta-idp)
+```
+
+#### Example `$HOME/.okta/okta.yaml`
+
+```yaml
+---
+awscli:
+  idps:
+    "arn:aws:iam::123456789012:saml-provider/company-okta-idp": "Data Production"
+    "arn:aws:iam::012345678901:saml-provider/company-okta-idp": "Data Development"
+    "arn:aws:iam::901234567890:saml-provider/company-okta-idp": "Marketing Production"
+    "arn:aws:iam::890123456789:saml-provider/company-okta-idp": "Marketing Development"
+```
+
+#### After
+
+```
+? Choose an IdP:  [Use arrows to move, type to filter]
+> Data Production
+  Data Development
+  Marketing Production
+  Marketing Development
 ```
 
 ## Operation
@@ -344,6 +417,7 @@ Wrote profile "test" to /Users/mikemondragon/.aws/credentials
 2018-04-04 11:56:00 test-bucket
 2021-06-10 12:47:11 mah-bucket
 ```
+**NOTE**: Writing to the AWS credentials file will include the `x_security_token_expires` value in RFC3339 format. This allows tools dependent on valid AWS credentials to validate if they are expired or not, and potentially trigger a refresh if needed.
 
 **NOTE**: the Okta AWS CLI will only append to the AWS credentials file. Be sure to
 comment out or remove previous named profiles from the credentials file.
@@ -388,10 +462,7 @@ prompt for passwords or any other user credentials itself, or offers to store
 user credentials on a desktop keychain.
 
 The configuration of the Okta AWS CLI is minimal with only two required values:
-Okta org domain name, and OIDC app id. There isn't a need for a configuration
-prompt to run for initialization and there isn't a need for a multi-lined
-configuration file that is dropped somewhere in the user's `$HOME` directory to
-operate the CLI.
+Okta org domain name, and OIDC app id.
 
 The Okta CLI is CLI flag and environment variable oriented and its default
 output is as environment variables. It can also write to AWS credentials file.
